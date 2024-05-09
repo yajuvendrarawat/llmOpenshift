@@ -7,7 +7,9 @@ RUN yum install -y \
  && yum clean all
 
  # Set the working directory inside the container
-WORKDIR /app
+WORKDIR /home/app/
+RUN git clone https://github.com/oobabooga/text-generation-webui.git
+WORKDIR /home/app/text-generation-webui
 
 # Copy the requirements.txt file into the container
 COPY ./requirements.txt .
