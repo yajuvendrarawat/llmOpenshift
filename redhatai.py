@@ -35,8 +35,8 @@ As an AI, provide accurate and relevant information based on the provided docume
 {question}
 [/INST]
 """
-device_name:f'cuda:{cuda)
-print(cuda)
+#device_name:f'cuda:{cuda.default_stream()}'
+#print(cuda)
 device = f'cuda:{cuda.current_device()}' if cuda.is_available() else 'cpu'
 print(device) 
 
