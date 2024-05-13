@@ -8,7 +8,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 import torch
 from transformers import StoppingCriteria, StoppingCriteriaList
-from htmlTemplate import css, bot_template, user_template
+from frontPageTemplate import css, bot_template, user_template
 from langchain.document_loaders import CSVLoader
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
@@ -16,6 +16,9 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from langchain.prompts import PromptTemplate
 from sentence_transformers import SentenceTransformer, util
+from langchain.document_loaders import PyPDFLoader
+from langchain.text_splitter import CharacterTextSplitter
+
 import os
 
 load_dotenv()
@@ -90,10 +93,18 @@ def load_model():
 def ingest_into_vectordb(split_docs):
     embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2',
                                        model_kwargs={'device': 'mps'})
-    loader = CSVLoader(split_docs)
+    #loader = CSVLoader(split_docs)
     # Load data from the csv file using the load command
-    csv_data = loader.load()
-    db = FAISS.from_documents(csv_data, embeddings)
+    #csv_data = loader.load()
+    loader = PyPDFLoader(split_docs)
+    pages = loader.load()
+    text_splitter = CharacterTextSplitter(
+        separator="\n",
+        chunk_size=1000,
+        chunk_overlap=150
+    )
+    docs = text_splitter.split_documents(pages)
+    db = FAISS.from_documents(docs, embeddings)
 
     DB_FAISS_PATH = 'vectorstore/db_faiss'
     db.save_local(DB_FAISS_PATH)
@@ -131,7 +142,7 @@ def main():
     load_dotenv()
     llm, memory = load_model()
 
-    st.set_page_config(page_title="Chat with your csv",
+    st.set_page_config(page_title="Chat with your pdf",
                        page_icon=":books:")
     st.write(css, unsafe_allow_html=True)
 

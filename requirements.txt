@@ -9,3 +9,5 @@ einops==0.6.1
 langchain==0.1.8
 faiss-cpu
 sentence_transformers
+python-dotenv
+pypdf
