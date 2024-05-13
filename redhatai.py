@@ -18,6 +18,7 @@ from langchain.prompts import PromptTemplate
 from sentence_transformers import SentenceTransformer, util
 from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
+from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
 
 import os
 
@@ -44,18 +45,28 @@ print(device)
 model_dir = "NousResearch/Llama-2-7b-chat-hf"
 tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
-stop_list = ['\nHuman:', '\n```\n']
-stop_token_ids = [tokenizer(x)['input_ids'] for x in stop_list]
-stop_token_ids = [torch.LongTensor(x).to(device) for x in stop_token_ids]
+#stop_list = ['\nHuman:', '\n```\n']
+#stop_token_ids = [tokenizer(x)['input_ids'] for x in stop_list]
+#stop_token_ids = [torch.LongTensor(x).to(device) for x in stop_token_ids]
 
-class StopOnTokens(StoppingCriteria):
-    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs) -> bool:
-        for stop_ids in stop_token_ids:
-            if torch.eq(input_ids[0][-len(stop_ids):], stop_ids).all():
-                return True
-        return False
+#class StopOnTokens(StoppingCriteria):
+#    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs) -> bool:
+#        for stop_ids in stop_token_ids:
+#            if torch.eq(input_ids[0][-len(stop_ids):], stop_ids).all():
+#                return True
+#        return False
 
-stopping_criteria = StoppingCriteriaList([StopOnTokens()])
+#stopping_criteria = StoppingCriteriaList([StopOnTokens()])
+
+class MaxLengthCriteria(StoppingCriteria):
+    """
+    Custom stopping criteria to stop generation when the output length exceeds a maximum length.
+    """
+    def __init__(self, max_length: int):
+        self.max_length = max_length
+
+    def __call__(self, input_ids, scores, **kwargs):
+        return input_ids.shape[1] >= self.max_length
 
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(llmtemplate)
 def load_model():
@@ -79,8 +90,10 @@ def load_model():
         return_full_text=True,  # langchain expects the full text
         task='text-generation',
         do_sample=True,
+        max_length=10000,
         # we pass model parameters here too
-        stopping_criteria=stopping_criteria,  # without this model rambles during chat
+        #stopping_criteria=stopping_criteria,  # without this model rambles during chat
+        max_new_tokens=10000,
         temperature=.001,  # 'randomness' of outputs, 0.0 is the min and 1.0 the max
         max_new_tokens=8096,  # max number of tokens to generate in the output
         repetition_penalty=1.1  # without this output begins repeating

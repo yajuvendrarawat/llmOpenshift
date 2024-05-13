@@ -12,3 +12,4 @@ sentence_transformers
 python-dotenv
 pypdf
 xformers
+#tensorflow[and-cuda]
