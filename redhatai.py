@@ -34,6 +34,8 @@ As an AI, provide accurate and relevant information based on the provided docume
 """
 device = f'cuda:{cuda.current_device()}' if cuda.is_available() else 'cpu'
 
+print(device) 
+
 #model_dir = "/content/drive/MyDrive/Llama-2-7b-chat-hf"
 model_dir = "NousResearch/Llama-2-7b-chat-hf"
 tokenizer = AutoTokenizer.from_pretrained(model_dir)
@@ -60,6 +62,7 @@ def load_model():
         load_in_4bit=True,
         bnb_4bit_quant_type='nf4',
         bnb_4bit_use_double_quant=True,
+        bnb_4bit_use_double_quant = False,
         bnb_4bit_compute_dtype=torch.bfloat16)
     model = transformers.AutoModelForCausalLM.from_pretrained(model_dir, quantization_config=bnb_config,
                                                               torch_dtype=torch.bfloat16, device_map="auto", )
