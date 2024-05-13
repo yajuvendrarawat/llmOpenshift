@@ -71,7 +71,9 @@ def load_model():
         bnb_4bit_compute_dtype=torch.bfloat16)
     model = transformers.AutoModelForCausalLM.from_pretrained(model_dir, quantization_config=bnb_config,
                                                               torch_dtype=torch.bfloat16, device_map="auto", )
+    print("transformers.AutoModelForCausalLM.from_pretrained")
     model.eval()
+    print("model eval")
     generate_text = transformers.pipeline(
         model=model,
         tokenizer=tokenizer,
@@ -86,11 +88,14 @@ def load_model():
         max_new_tokens=8096,  # max number of tokens to generate in the output
         repetition_penalty=1.1  # without this output begins repeating
     )
+    print("transformers pipeline")
     model_kwargs = {'temperature': 0}
     llm = HuggingFacePipeline(pipeline=generate_text)
+    print("HuggingFacePipeline")
     CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(llmtemplate)
     memory = ConversationBufferMemory(
         memory_key='chat_history', return_messages=True, output_key='answer')
+    print("ConversationBufferMemory")
     print("exiting load_model")
     return llm, memory
 
