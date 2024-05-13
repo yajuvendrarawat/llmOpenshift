@@ -35,8 +35,9 @@ As an AI, provide accurate and relevant information based on the provided docume
 {question}
 [/INST]
 """
+device_name:f'cuda:{cuda)
+print(cuda)
 device = f'cuda:{cuda.current_device()}' if cuda.is_available() else 'cpu'
-
 print(device) 
 
 #model_dir = "/content/drive/MyDrive/Llama-2-7b-chat-hf"
@@ -61,10 +62,12 @@ stop_token_ids = [torch.LongTensor(x).to(device) for x in stop_token_ids]
 
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(llmtemplate)
 def load_model():
+    print("entering load_model")
     bnb_config = transformers.BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type='nf4',
         bnb_4bit_use_double_quant=True,
+        load_in_8bit_fp32_cpu_offload=True,
         bnb_4bit_compute_dtype=torch.bfloat16)
     model = transformers.AutoModelForCausalLM.from_pretrained(model_dir, quantization_config=bnb_config,
                                                               torch_dtype=torch.bfloat16, device_map="auto", )
@@ -88,11 +91,14 @@ def load_model():
     CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(llmtemplate)
     memory = ConversationBufferMemory(
         memory_key='chat_history', return_messages=True, output_key='answer')
+    print("exiting load_model")
     return llm, memory
 
 def ingest_into_vectordb(split_docs):
+    print("entering ingest_into_vectordb")
+    print(split_docs)
     embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2',
-                                       model_kwargs={'device': 'mps'})
+                                       model_kwargs={'device': 'cuda'})
     #loader = CSVLoader(split_docs)
     # Load data from the csv file using the load command
     #csv_data = loader.load()
@@ -108,10 +114,12 @@ def ingest_into_vectordb(split_docs):
 
     DB_FAISS_PATH = 'vectorstore/db_faiss'
     db.save_local(DB_FAISS_PATH)
+    print("exiting ingest_into_vectordb")
     return db
 
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(llmtemplate)
 def get_conversation_chain(vectordb, llm, memory):
+    print("entering get_conversation_chain")
     #retrieves top 2 serach results.
     retriever = vectordb.as_retriever(search_kwargs={'k': 2})
 
@@ -122,9 +130,11 @@ def get_conversation_chain(vectordb, llm, memory):
                            memory=memory,
                            return_source_documents=False))
     print("Conversational Chain created for the LLM using the vector store")
+    print("exiting get_conversation_chain")
     return conversation_chain
 
 def handle_userinput(user_question):
+    print("entering handle_userinput")
     response = st.session_state.conversation({'question': user_question})
     st.session_state.chat_history = response['chat_history']
 
@@ -137,6 +147,8 @@ def handle_userinput(user_question):
             print(message.content)
             st.write(bot_template.replace(
                 "{{MSG}}", message.content), unsafe_allow_html=True)
+            
+    print("exiting handle_userinput")
             
 def main():
     load_dotenv()
@@ -151,7 +163,7 @@ def main():
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    st.header("Chat with multiple csv :")
+    st.header("Chat with multiple PDF :")
     user_question = st.text_input("Ask a question about your documents:")
 
     if user_question:
@@ -160,7 +172,7 @@ def main():
     with st.sidebar:
         st.subheader("Your documents")
         pdf_docs = st.file_uploader(
-            "Upload your CSVs here and click on 'Process'")  # , accept_multiple_files=True)
+            "Upload your PDFs here and click on 'Process'")  # , accept_multiple_files=True)
         if pdf_docs:
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 tmp_file.write(pdf_docs.getvalue())
