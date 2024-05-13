@@ -2,8 +2,8 @@ FROM nvidia/cuda:12.4.1-runtime-ubi9
 
 # Install required libraries and dependencies for Streamlit
 RUN yum install -y \
-    python3==3.9.18 \
-    python3-pip==3.9.18 \
+    python \
+    python-pip \
  && yum clean all
 
 ENV device_type=cuda
