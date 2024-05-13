@@ -11,3 +11,4 @@ faiss-cpu
 sentence_transformers
 python-dotenv
 pypdf
+xformers
