@@ -42,8 +42,8 @@ device = f'cuda:{cuda.current_device()}' if cuda.is_available() else 'cpu'
 print(device) 
 
 #model_dir = "/content/drive/MyDrive/Llama-2-7b-chat-hf"
-model_dir = "NousResearch/Llama-2-7b-chat-hf"
-tokenizer = AutoTokenizer.from_pretrained(model_dir)
+#model_dir = "NousResearch/Llama-2-7b-chat-hf"
+#tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
 #stop_list = ['\nHuman:', '\n```\n']
 #stop_token_ids = [tokenizer(x)['input_ids'] for x in stop_list]
@@ -71,12 +71,16 @@ class MaxLengthCriteria(StoppingCriteria):
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(llmtemplate)
 def load_model():
     print("entering load_model")
+    model_dir = "NousResearch/Llama-2-7b-chat-hf"
+    tokenizer = AutoTokenizer.from_pretrained(model_dir)
+
     bnb_config = transformers.BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type='nf4',
         bnb_4bit_use_double_quant=True,
         load_in_8bit_fp32_cpu_offload=True,
         bnb_4bit_compute_dtype=torch.bfloat16)
+    
     model = transformers.AutoModelForCausalLM.from_pretrained(model_dir, quantization_config=bnb_config,
                                                               torch_dtype=torch.bfloat16, device_map="auto", )
     print("transformers.AutoModelForCausalLM.from_pretrained")
