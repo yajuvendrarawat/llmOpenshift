@@ -19,3 +19,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 ENV LD_LIBRARY_PATH /usr/local/lib/python3.9/site-packages/nvidia/cudnn/lib/:/usr/local/lib/python3.9/site-packages/nvidia/cuda_cupti/lib/:$LD_LIBRARY_PATH
 
 
+# Expose the port that Streamlit runs on
+EXPOSE 8501
+
+# Set the entry point for the container
+ENTRYPOINT ["streamlit", "run", "redhatai.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
