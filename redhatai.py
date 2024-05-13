@@ -156,8 +156,7 @@ def main():
                 tmp_file.write(pdf_docs.getvalue())
                 tmp_file_path = tmp_file.name
         if st.button("Process"):
-            with st.spinner("Processing")
-
+            with st.spinner("Processing"):
                 # create vector store
                 vectorstore = ingest_into_vectordb(tmp_file_path)
 
