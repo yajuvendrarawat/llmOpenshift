@@ -44,6 +44,9 @@ print(device)
 model_dir = "NousResearch/Llama-2-7b-chat-hf"
 tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
+stop_list = ['\nHuman:', '\n```\n']
+stop_token_ids = [tokenizer(x)['input_ids'] for x in stop_list]
+stop_token_ids = [torch.LongTensor(x).to(device) for x in stop_token_ids]
 
 class StopOnTokens(StoppingCriteria):
     def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs) -> bool:
@@ -52,13 +55,7 @@ class StopOnTokens(StoppingCriteria):
                 return True
         return False
 
-
 stopping_criteria = StoppingCriteriaList([StopOnTokens()])
-stop_list = ['\nHuman:', '\n```\n']
-
-stop_token_ids = [tokenizer(x)['input_ids'] for x in stop_list]
-
-stop_token_ids = [torch.LongTensor(x).to(device) for x in stop_token_ids]
 
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(llmtemplate)
 def load_model():
