@@ -34,7 +34,7 @@ As an AI, provide accurate and relevant information based on the provided docume
 """
 device = f'cuda:{cuda.current_device()}' if cuda.is_available() else 'cpu'
 
-model_dir = "/content/drive/MyDrive/Llama-2-7b-chat-hf"
+#model_dir = "/content/drive/MyDrive/Llama-2-7b-chat-hf"
 model_dir = "NousResearch/Llama-2-7b-chat-hf"
 tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
