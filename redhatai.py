@@ -3,23 +3,23 @@ from dotenv import load_dotenv
 import tempfile
 from torch import cuda, bfloat16
 #import transformers
-from langchain_community.llms import HuggingFacePipeline
+from langchain.llms import HuggingFacePipeline
 #from transformers import AutoTokenizer, AutoModelForCausalLM
 
 import torch
 #from transformers import StoppingCriteria, StoppingCriteriaList
 from frontPageTemplate import css, bot_template, user_template
-from langchain_community.document_loaders import CSVLoader
-from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.embeddings import HuggingFaceInstructEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain_community.memory import ConversationBufferMemory
-from langchain_community.chains import ConversationalRetrievalChain
-from langchain_community.prompts import PromptTemplate
+from langchain.document_loaders import CSVLoader
+from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.embeddings import HuggingFaceInstructEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationalRetrievalChain
+from langchain.prompts import PromptTemplate
 from sentence_transformers import SentenceTransformer, util
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.text_splitter import CharacterTextSplitter
-from langchain_community.document_loaders import TextLoader
+from langchain.document_loaders import PyPDFLoader
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.document_loaders import TextLoader
 from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
 from transformers import (
     AutoModelForCausalLM,
@@ -87,8 +87,8 @@ def load_model():
 
     #if "tokenizer" not in st.session_state:
     tokenizer = AutoTokenizer.from_pretrained(model_dir)
-    st.session_state.tokenizer = tokenizer
-
+     #   st.session_state.tokenizer = tokenizer
+    
     #tokenizer=st.session_state.tokenizer
 
     bnb_config = BitsAndBytesConfig(
@@ -102,10 +102,10 @@ def load_model():
                                                             torch_dtype=torch.bfloat16, device_map="auto", )
     #    st.session_state.model = model
 
-    model=st.session_state.model
+    #model=st.session_state.model
 
     print("AutoModelForCausalLM.from_pretrained")
-    #model.eval()
+    model.eval()
     print("model eval")
     generate_text = pipeline(
         model=model,
@@ -158,13 +158,13 @@ def ingest_into_vectordb(split_docs):
 ### NEW CODE ####
     print("before embedding")
     # Create embeddings
-    #if "embeddings" not in st.session_state:
+   # if "embeddings" not in st.session_state.embeddings:
     embeddings = HuggingFaceInstructEmbeddings(
         model_name='sentence-transformers/all-MiniLM-L6-v2',
         model_kwargs={"device": "cuda:0"},
     )
-     #   st.session_state.embeddings=embeddings
-      #  print("after embedding")
+    #    st.session_state.embeddings=embeddings
+     #   print("after embedding")
 
     print("one more after embedding")
 
