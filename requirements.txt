@@ -13,4 +13,3 @@ python-dotenv
 pypdf
 xformers
 langchain-community
-#tensorflow[and-cuda]

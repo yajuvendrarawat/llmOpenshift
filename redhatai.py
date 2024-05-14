@@ -206,7 +206,6 @@ def handle_userinput(user_question):
             print(message.content)
             st.write(bot_template.replace(
                 "{{MSG}}", message.content), unsafe_allow_html=True)
-            
     print("exiting handle_userinput")
             
 def main():
