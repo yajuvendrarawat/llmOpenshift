@@ -3,21 +3,22 @@ from dotenv import load_dotenv
 import tempfile
 from torch import cuda, bfloat16
 #import transformers
-from langchain.llms import HuggingFacePipeline
+from langchain_community.llms import HuggingFacePipeline
 #from transformers import AutoTokenizer, AutoModelForCausalLM
 
 import torch
 #from transformers import StoppingCriteria, StoppingCriteriaList
 from frontPageTemplate import css, bot_template, user_template
-from langchain.document_loaders import CSVLoader
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationalRetrievalChain
-from langchain.prompts import PromptTemplate
+from langchain_community.document_loaders import CSVLoader
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceInstructEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.memory import ConversationBufferMemory
+from langchain_community.chains import ConversationalRetrievalChain
+from langchain_community.prompts import PromptTemplate
 from sentence_transformers import SentenceTransformer, util
-from langchain.document_loaders import PyPDFLoader
-from langchain.text_splitter import CharacterTextSplitter
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.text_splitter import CharacterTextSplitter
 from langchain_community.document_loaders import TextLoader
 from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
 from transformers import (
@@ -104,7 +105,7 @@ def load_model():
     model=st.session_state.model
 
     print("AutoModelForCausalLM.from_pretrained")
-    model.eval()
+    #model.eval()
     print("model eval")
     generate_text = pipeline(
         model=model,
@@ -157,7 +158,7 @@ def ingest_into_vectordb(split_docs):
 ### NEW CODE ####
     print("before embedding")
     # Create embeddings
-    if "embeddings" not in st.session_state.embeddings:
+    if "embeddings" not in st.session_state:
         embeddings = HuggingFaceInstructEmbeddings(
             model_name='sentence-transformers/all-MiniLM-L6-v2',
             model_kwargs={"device": "cuda:0"},
@@ -218,14 +219,14 @@ def handle_userinput(user_question):
 def main():
     load_dotenv()
 
-    if "tokenizer" not in st.session_state:
-        st.session_state.tokenizer = None
+    #if "tokenizer" not in st.session_state:
+    #    st.session_state.tokenizer = None
 
-    if "model" not in st.session_state:
-        st.session_state.model = None
+    #if "model" not in st.session_state:
+    #    st.session_state.model = None
 
-    if "embeddings" not in st.session_state:
-        st.session_state.embeddings = None
+    #if "embeddings" not in st.session_state:
+    #    st.session_state.embeddings = None
 
     llm, memory = load_model()
 
