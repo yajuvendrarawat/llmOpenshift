@@ -2,12 +2,12 @@ import streamlit as st
 from dotenv import load_dotenv
 import tempfile
 from torch import cuda, bfloat16
-import transformers
+#import transformers
 from langchain.llms import HuggingFacePipeline
-from transformers import AutoTokenizer, AutoModelForCausalLM
+#from transformers import AutoTokenizer, AutoModelForCausalLM
 
 import torch
-from transformers import StoppingCriteria, StoppingCriteriaList
+#from transformers import StoppingCriteria, StoppingCriteriaList
 from frontPageTemplate import css, bot_template, user_template
 from langchain.document_loaders import CSVLoader
 from langchain.embeddings import HuggingFaceEmbeddings
@@ -18,7 +18,17 @@ from langchain.prompts import PromptTemplate
 from sentence_transformers import SentenceTransformer, util
 from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
+from langchain_community.document_loaders import TextLoader
 from transformers.generation.stopping_criteria import StoppingCriteria, StoppingCriteriaList
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    HfArgumentParser,
+    TrainingArguments,
+    pipeline,
+    logging,
+)
 
 import os
 
@@ -69,24 +79,31 @@ class MaxLengthCriteria(StoppingCriteria):
         return input_ids.shape[1] >= self.max_length
 
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(llmtemplate)
+
 def load_model():
     print("entering load_model")
     model_dir = "NousResearch/Llama-2-7b-chat-hf"
-    tokenizer = AutoTokenizer.from_pretrained(model_dir)
 
-    bnb_config = transformers.BitsAndBytesConfig(
+    if "tokenizer" not in st.session_state:
+        tokenizer = AutoTokenizer.from_pretrained(model_dir)
+        st.session_state.tokenizer = tokenizer
+    
+
+    bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type='nf4',
         bnb_4bit_use_double_quant=True,
-        load_in_8bit_fp32_cpu_offload=True,
         bnb_4bit_compute_dtype=torch.bfloat16)
     
-    model = transformers.AutoModelForCausalLM.from_pretrained(model_dir, quantization_config=bnb_config,
-                                                              torch_dtype=torch.bfloat16, device_map="auto", )
-    print("transformers.AutoModelForCausalLM.from_pretrained")
+    if "model" not in st.session_state:
+        model = AutoModelForCausalLM.from_pretrained(model_dir, quantization_config=bnb_config,
+                                                                torch_dtype=torch.bfloat16, device_map="auto", )
+        st.session_state.model = model
+
+    print("AutoModelForCausalLM.from_pretrained")
     model.eval()
     print("model eval")
-    generate_text = transformers.pipeline(
+    generate_text = pipeline(
         model=model,
         tokenizer=tokenizer,
         trust_remote_code=True,
@@ -99,10 +116,10 @@ def load_model():
         #stopping_criteria=stopping_criteria,  # without this model rambles during chat
         max_new_tokens=10000,
         temperature=.001,  # 'randomness' of outputs, 0.0 is the min and 1.0 the max
-        max_new_tokens=8096,  # max number of tokens to generate in the output
+ #       max_new_tokens=8096,  # max number of tokens to generate in the output
         repetition_penalty=1.1  # without this output begins repeating
     )
-    print("transformers pipeline")
+    print("pipeline")
     model_kwargs = {'temperature': 0}
     llm = HuggingFacePipeline(pipeline=generate_text)
     print("HuggingFacePipeline")
@@ -116,20 +133,41 @@ def load_model():
 def ingest_into_vectordb(split_docs):
     print("entering ingest_into_vectordb")
     print(split_docs)
-    embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2',
-                                       model_kwargs={'device': 'cuda'})
+#
+#    if "embeddings" not in st.session_state:
+#        embeddings = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2',
+#                                        model_kwargs={'device': 'cuda'})
+#        st.session_state.embeddings=embeddings
+
     #loader = CSVLoader(split_docs)
     # Load data from the csv file using the load command
     #csv_data = loader.load()
-    loader = PyPDFLoader(split_docs)
-    pages = loader.load()
-    text_splitter = CharacterTextSplitter(
-        separator="\n",
-        chunk_size=1000,
-        chunk_overlap=150
+ #   loader = PyPDFLoader(split_docs)
+ #   pages = loader.load()
+ #   text_splitter = CharacterTextSplitter(
+ #       separator="\n",
+ #       chunk_size=1000,
+ #       chunk_overlap=150
+ #   )
+#  docs = text_splitter.split_documents(pages)
+
+### NEW CODE ####
+    print("before embedding")
+    # Create embeddings
+    embeddings = HuggingFaceInstructEmbeddings(
+        model_name='sentence-transformers/all-MiniLM-L6-v2',
+        model_kwargs={"device": "cuda:0"},
     )
-    docs = text_splitter.split_documents(pages)
+    print("after embedding")
+
+    loader = TextLoader(split_docs)
+    documents = loader.load()
+    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
+    docs = text_splitter.split_documents(documents)
+
     db = FAISS.from_documents(docs, embeddings)
+
+    print(db.index.ntotal)
 
     DB_FAISS_PATH = 'vectorstore/db_faiss'
     db.save_local(DB_FAISS_PATH)
@@ -137,8 +175,10 @@ def ingest_into_vectordb(split_docs):
     return db
 
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template(llmtemplate)
+
 def get_conversation_chain(vectordb, llm, memory):
     print("entering get_conversation_chain")
+    print("memory",memory)
     #retrieves top 2 serach results.
     retriever = vectordb.as_retriever(search_kwargs={'k': 2})
 
@@ -171,6 +211,16 @@ def handle_userinput(user_question):
             
 def main():
     load_dotenv()
+
+    if "tokenizer" not in st.session_state:
+        st.session_state.tokenizer = None
+
+    if "model" not in st.session_state:
+        st.session_state.model = None
+
+    if "embeddings" not in st.session_state:
+        st.session_state.embeddings = None
+
     llm, memory = load_model()
 
     st.set_page_config(page_title="Chat with your pdf",
@@ -200,11 +250,9 @@ def main():
             with st.spinner("Processing"):
                 # create vector store
                 vectorstore = ingest_into_vectordb(tmp_file_path)
-
                 # create conversation chain
                 st.session_state.conversation = get_conversation_chain(
                     vectorstore,llm, memory)
-
 
 if __name__ == '__main__':
     main()
