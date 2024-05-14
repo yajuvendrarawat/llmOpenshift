@@ -88,6 +88,7 @@ def load_model():
         tokenizer = AutoTokenizer.from_pretrained(model_dir)
         st.session_state.tokenizer = tokenizer
     
+    tokenizer=st.session_state.tokenizer
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -99,6 +100,8 @@ def load_model():
         model = AutoModelForCausalLM.from_pretrained(model_dir, quantization_config=bnb_config,
                                                                 torch_dtype=torch.bfloat16, device_map="auto", )
         st.session_state.model = model
+
+    model=st.session_state.model
 
     print("AutoModelForCausalLM.from_pretrained")
     model.eval()
@@ -154,11 +157,15 @@ def ingest_into_vectordb(split_docs):
 ### NEW CODE ####
     print("before embedding")
     # Create embeddings
-    embeddings = HuggingFaceInstructEmbeddings(
-        model_name='sentence-transformers/all-MiniLM-L6-v2',
-        model_kwargs={"device": "cuda:0"},
-    )
-    print("after embedding")
+    if "embeddings" not in st.session_state.embeddings:
+        embeddings = HuggingFaceInstructEmbeddings(
+            model_name='sentence-transformers/all-MiniLM-L6-v2',
+            model_kwargs={"device": "cuda:0"},
+        )
+        st.session_state.embeddings=embeddings
+        print("after embedding")
+
+    print("one more after embedding")
 
     loader = TextLoader(split_docs)
     documents = loader.load()
