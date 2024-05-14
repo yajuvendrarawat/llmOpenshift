@@ -85,11 +85,11 @@ def load_model():
     print("entering load_model")
     model_dir = "NousResearch/Llama-2-7b-chat-hf"
 
-    if "tokenizer" not in st.session_state:
-        tokenizer = AutoTokenizer.from_pretrained(model_dir)
-        st.session_state.tokenizer = tokenizer
-    
-    tokenizer=st.session_state.tokenizer
+    #if "tokenizer" not in st.session_state:
+    tokenizer = AutoTokenizer.from_pretrained(model_dir)
+    st.session_state.tokenizer = tokenizer
+
+    #tokenizer=st.session_state.tokenizer
 
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
@@ -97,10 +97,10 @@ def load_model():
         bnb_4bit_use_double_quant=True,
         bnb_4bit_compute_dtype=torch.bfloat16)
     
-    if "model" not in st.session_state:
-        model = AutoModelForCausalLM.from_pretrained(model_dir, quantization_config=bnb_config,
-                                                                torch_dtype=torch.bfloat16, device_map="auto", )
-        st.session_state.model = model
+    #if "model" not in st.session_state:
+    model = AutoModelForCausalLM.from_pretrained(model_dir, quantization_config=bnb_config,
+                                                            torch_dtype=torch.bfloat16, device_map="auto", )
+    #    st.session_state.model = model
 
     model=st.session_state.model
 
@@ -158,13 +158,13 @@ def ingest_into_vectordb(split_docs):
 ### NEW CODE ####
     print("before embedding")
     # Create embeddings
-    if "embeddings" not in st.session_state:
-        embeddings = HuggingFaceInstructEmbeddings(
-            model_name='sentence-transformers/all-MiniLM-L6-v2',
-            model_kwargs={"device": "cuda:0"},
-        )
-        st.session_state.embeddings=embeddings
-        print("after embedding")
+    #if "embeddings" not in st.session_state:
+    embeddings = HuggingFaceInstructEmbeddings(
+        model_name='sentence-transformers/all-MiniLM-L6-v2',
+        model_kwargs={"device": "cuda:0"},
+    )
+     #   st.session_state.embeddings=embeddings
+      #  print("after embedding")
 
     print("one more after embedding")
 
